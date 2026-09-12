@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "Dark VPN",
+    "slug": "neon-x-vpn",
+    "version": "2.2.5",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.ksgamer31.neonxvpn",
+      "versionCode": 2
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "scheme": "neonx",
+    "plugins": [
+      "./plugins/withXrayVpnFix.js",
+      "expo-font"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "1b959cd8-7539-49ad-a446-3e007a711100"
+      }
+    },
+    "owner": "ksgamer3131"
+  }
+}
