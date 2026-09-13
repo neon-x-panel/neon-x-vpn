@@ -18,7 +18,8 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.ksgamer31.neonxvpn",
-      "versionCode": 3
+      "versionCode": 4,
+      "permissions": ["REQUEST_INSTALL_PACKAGES"]
     },
     "web": {
       "favicon": "./assets/favicon.png"

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, Text, Modal, TouchableOpacity, TextInput, Alert, ScrollView, Linking } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as IntentLauncher from 'expo-intent-launcher';
 import * as Clipboard from 'expo-clipboard';
 import { useVpn } from '../context/VpnContext';
 import { NeonTheme } from '../theme/neonTheme';
@@ -140,7 +142,9 @@ export const ShareModal = ({ configId, onClose }: { configId: string | null; onC
 export const SettingsModal = ({ visible, onClose }: { visible: boolean; onClose: () => void }) => {
   const { routingMode, setRoutingMode, dnsMode, setDnsMode, killSwitch, setKillSwitch, clearAll, language, setLanguage } = useVpn();
   const [confirmClear, setConfirmClear] = useState(false);
-  const [update, setUpdate] = useState<{ available: boolean; url?: string; version?: string } | null>(null);
+  const [update, setUpdate] = useState<{ available: boolean; url?: string; version?: string; apkUrl?: string } | null>(null);
+  const [downloading, setDownloading] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   const checkUpdate = async () => {
     try {
@@ -148,13 +152,45 @@ export const SettingsModal = ({ visible, onClose }: { visible: boolean; onClose:
       const data = await resp.json();
       const latest = data.tag_name; // e.g. "2.2.6"
       const current = '2.2.5';
+      const apk = (data.assets || []).find((a: any) => a.name?.endsWith('.apk'));
+      const apkUrl = apk?.browser_download_url;
       if (latest && latest !== current) {
-        setUpdate({ available: true, url: data.html_url, version: latest });
+        setUpdate({ available: true, url: data.html_url, version: latest, apkUrl });
       } else {
         Alert.alert('آپدیت', 'شما از آخرین نسخه استفاده می‌کنید');
       }
     } catch {
       Alert.alert('خطا', 'بررسی به‌روزرسانی ناموفق بود');
+    }
+  };
+
+  const downloadAndInstall = async () => {
+    if (!update?.apkUrl) {
+      Alert.alert('خطا', 'فایل APK در ریلیز گیت‌هاب پیدا نشد');
+      if (update?.url) Linking.openURL(update.url);
+      return;
+    }
+    try {
+      setDownloading(true);
+      setProgress(0);
+      const fileUri = (FileSystem.cacheDirectory || FileSystem.documentDirectory || '') + `darkvpn-${update.version}.apk`;
+      const dl = FileSystem.createDownloadResumable(update.apkUrl, fileUri, {}, (p: any) => {
+        if (p.totalBytesWritten && p.totalBytesExpectedToWrite) {
+          setProgress(p.totalBytesWritten / p.totalBytesExpectedToWrite);
+        }
+      });
+      const result: any = await dl.downloadAsync();
+      setDownloading(false);
+      if (!result?.uri) throw new Error('download failed');
+      const cUri = await FileSystem.getContentUriAsync(result.uri);
+      await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
+        data: cUri,
+        flags: 1,
+        type: 'application/vnd.android.package-archive',
+      });
+    } catch (e: any) {
+      setDownloading(false);
+      Alert.alert('خطا', 'دانلود یا نصب ناموفق بود: ' + (e?.message || ''));
     }
   };
 
@@ -182,8 +218,10 @@ export const SettingsModal = ({ visible, onClose }: { visible: boolean; onClose:
           <View style={styles.handle} />
           <Text style={styles.title}>تنظیمات</Text>
           {update?.available && (
-            <TouchableOpacity style={{ backgroundColor: '#f1c40f', padding: 12, borderRadius: 12, marginBottom: 12, alignItems: 'center' }} onPress={() => Linking.openURL(update.url!)}>
-              <Text style={{ color: '#000', fontWeight: 'bold' }}>نسخه جدید {update.version} موجود است! کلیک کنید</Text>
+            <TouchableOpacity disabled={downloading} style={{ backgroundColor: '#f1c40f', padding: 12, borderRadius: 12, marginBottom: 12, alignItems: 'center', opacity: downloading ? 0.7 : 1 }} onPress={downloadAndInstall}>
+              <Text style={{ color: '#000', fontWeight: 'bold' }}>
+                {downloading ? `در حال دانلود… ${Math.round(progress * 100)}٪` : `دانلود و نصب نسخه ${update.version}`}
+              </Text>
             </TouchableOpacity>
           )}
           <ScrollView>
