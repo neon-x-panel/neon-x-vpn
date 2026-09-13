@@ -144,10 +144,10 @@ export const SettingsModal = ({ visible, onClose }: { visible: boolean; onClose:
 
   const checkUpdate = async () => {
     try {
-      const resp = await fetch('https://api.github.com/repos/ksgamer31/neon-x-vpn/releases/latest');
+      const resp = await fetch('https://api.github.com/repos/neon-x-panel/neon-x-vpn/releases/latest');
       const data = await resp.json();
-      const latest = data.tag_name; // e.g. "2.2.5"
-      const current = '2.2.4';
+      const latest = data.tag_name; // e.g. "2.2.6"
+      const current = '2.2.5';
       if (latest && latest !== current) {
         setUpdate({ available: true, url: data.html_url, version: latest });
       } else {
