@@ -14,6 +14,11 @@ import { SubsModal, ShareModal, SettingsModal, EditModal } from '../components/M
 
 type Filter = 'all' | 'vless' | 'vmess' | 'trojan' | 'ss' | 'sub' | 'manual';
 
+const FILTERS: [Filter, string][] = [
+  ['all', 'همه'], ['vless', 'VLESS'], ['vmess', 'VMESS'],
+  ['trojan', 'Trojan'], ['ss', 'SS'], ['sub', 'اشتراک'], ['manual', 'دستی'],
+];
+
 export const HomeScreen = () => {
   const {
     configs, subs, selectedConfig, status, stats, testingPing, connectError,
@@ -40,7 +45,6 @@ export const HomeScreen = () => {
     else if (filter !== 'all') arr = arr.filter(c => c.protocol === filter);
     const q = search.trim().toLowerCase();
     if (q) arr = arr.filter(c => c.name.toLowerCase().includes(q) || c.address.toLowerCase().includes(q));
-    // sort: selected first, then ping asc (timeouts last)
     return [...arr].sort((a, b) => {
       if (a.id === selectedConfig?.id) return -1;
       if (b.id === selectedConfig?.id) return 1;
@@ -53,7 +57,10 @@ export const HomeScreen = () => {
   const onToggle = () => {
     if (isConnected || isConnecting) disconnect();
     else {
-      if (!selectedConfig) { Alert.alert('سروری انتخاب نشده', 'اول با دکمه ＋ یک لینک یا اشتراک اضافه کن، بعد یک سرور را لمس کن تا انتخاب شود'); return; }
+      if (!selectedConfig) {
+        Alert.alert('سروری انتخاب نشده', 'اول با دکمه «افزودن سرور» یک لینک یا اشتراک اضافه کن، بعد یک سرور را لمس کن تا انتخاب شود');
+        return;
+      }
       connect();
     }
   };
@@ -82,56 +89,59 @@ export const HomeScreen = () => {
         ? NeonTheme.colors.red
         : NeonTheme.colors.disconnected;
 
-  const statusLabel = isConnected ? 'متصل' : isConnecting ? 'در حال اتصال…' : isError ? 'خطا در اتصال' : 'قطع';
-
-  const FILTERS: [Filter, string][] = [
-    ['all', 'همه'], ['vless', 'VLESS'], ['vmess', 'VMESS'],
-    ['trojan', 'Trojan'], ['ss', 'SS'], ['sub', 'اشتراک'], ['manual', 'دستی'],
-  ];
+  const statusLabel = isConnected ? 'متصل هستی' : isConnecting ? 'در حال اتصال…' : isError ? 'خطا در اتصال' : 'قطع هستی';
 
   const pingText = selectedConfig?.ping !== undefined && selectedConfig?.ping !== null
     ? selectedConfig.ping < 0 ? 'timeout' : `${selectedConfig.ping} ms`
     : '—';
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="light-content" backgroundColor={NeonTheme.colors.bgApp} />
+    <View style={styles.root}>
+      <StatusBar barStyle="light-content" backgroundColor="#0a0618" />
 
-      {/* ── header: brand always visible below notch ── */}
-      <View style={[styles.header, { paddingTop: Math.max(insets.top > 0 ? 4 : 10, 4) }]}>
-        <TouchableOpacity style={styles.hbtn} onPress={() => setShowSettings(true)} hitSlop={8}>
-          <Text style={styles.hbtnText}>⚙️</Text>
-        </TouchableOpacity>
-        <View style={styles.brand}>
-          <LinearGradient colors={NeonTheme.gradients.titleGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.logoDot}>
-            <Text style={styles.logoText}>D</Text>
-          </LinearGradient>
-          <View style={{ alignItems: 'center' }}>
-            <Text style={styles.title}>Dark VPN</Text>
-            <View style={styles.statusRow}>
-              <View style={[styles.dot, { backgroundColor: statusColor }]} />
-              <Text style={[styles.statusText, { color: statusColor }]}>{statusLabel}</Text>
+      {/* ── top gradient header (always below notch) ── */}
+      <LinearGradient
+        colors={['#1b0f3a', '#0f0b26', '#080b11']}
+        start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
+        style={[styles.headerBg, { paddingTop: insets.top + 10 }]}
+      >
+        <SafeAreaView edges={['left', 'right']}>
+          <View style={styles.header}>
+            <TouchableOpacity style={styles.hbtn} onPress={() => setShowSettings(true)} hitSlop={8}>
+              <Text style={styles.hbtnText}>⚙️</Text>
+            </TouchableOpacity>
+            <View style={styles.brand}>
+              <LinearGradient colors={['#8b5cf6', '#ec4899']} style={styles.logo}>
+                <Text style={styles.logoText}>D</Text>
+              </LinearGradient>
+              <View>
+                <Text style={styles.appName}>Dark VPN</Text>
+                <Text style={styles.appSub}>دارک وی‌پی‌ان • اتصال امن</Text>
+              </View>
             </View>
+            <TouchableOpacity style={styles.hbtn} onPress={() => setShowSubs(true)} hitSlop={8}>
+              <Text style={styles.hbtnText}>🔗</Text>
+              {subs.length > 0 && (
+                <View style={styles.countBadge}>
+                  <Text style={styles.countText}>{subs.length}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
           </View>
-        </View>
-        <TouchableOpacity style={styles.hbtn} onPress={() => setShowSubs(true)} hitSlop={8}>
-          <Text style={styles.hbtnText}>🔗</Text>
-          {subs.length > 0 && (
-            <View style={styles.countBadge}>
-              <Text style={styles.countText}>{subs.length}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      </View>
 
-      {/* ── hero connect card ── */}
-      <View style={styles.heroWrap}>
-        <LinearGradient
-          colors={isConnected ? ['#06ffa5', '#00f2fe'] : isConnecting ? ['#f59e0b', '#ec4899'] : ['#2a3350', '#1a2140']}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          style={styles.heroBorder}
-        >
-          <View style={styles.heroInner}>
+          {/* ── status pill ── */}
+          <View style={styles.pillRow}>
+            <View style={[styles.pill, { borderColor: statusColor + '55', backgroundColor: statusColor + '14' }]}>
+              <View style={[styles.dot, { backgroundColor: statusColor }]} />
+              <Text style={[styles.pillText, { color: statusColor }]}>{statusLabel}</Text>
+            </View>
+            {isConnected && (
+              <Text style={styles.timer}>{formatDuration(stats.durationSeconds)}</Text>
+            )}
+          </View>
+
+          {/* ── big power button ── */}
+          <View style={styles.powerZone}>
             <TouchableOpacity onPress={onToggle} activeOpacity={0.85} style={styles.powerWrap}>
               <LinearGradient
                 colors={
@@ -139,8 +149,9 @@ export const HomeScreen = () => {
                     ? NeonTheme.gradients.powerConnected
                     : isConnecting
                       ? NeonTheme.gradients.powerConnecting
-                      : NeonTheme.gradients.powerDisconnected
+                      : (['#4c1d95', '#7c3aed'] as [string, string])
                 }
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                 style={styles.powerRing}
               >
                 <View style={styles.powerInner}>
@@ -148,45 +159,68 @@ export const HomeScreen = () => {
                     <ActivityIndicator size="large" color={NeonTheme.colors.connecting} />
                   ) : (
                     <>
-                      <Text style={styles.powerIcon}>{isConnected ? '⏻' : '○'}</Text>
-                      <Text style={[styles.powerLabel, { color: statusColor }]}>
-                        {isConnected ? 'متصل' : 'اتصال'}
+                      <Text style={styles.powerIcon}>{isConnected ? '⏻' : '⏻'}</Text>
+                      <Text style={[styles.powerLabel, { color: isConnected ? NeonTheme.colors.connected : '#c4b5fd' }]}>
+                        {isConnected ? 'قطع کن' : 'وصل شو'}
                       </Text>
                     </>
                   )}
                 </View>
               </LinearGradient>
             </TouchableOpacity>
+            <Text style={styles.serverName} numberOfLines={1}>
+              {selectedConfig ? `▸ ${selectedConfig.name}` : 'هنوز سروری انتخاب نکردی'}
+            </Text>
+          </View>
 
-            <View style={styles.heroInfo}>
-              <Text style={styles.heroServerLabel}>سرور فعال</Text>
-              <Text style={styles.heroServer} numberOfLines={1}>
-                {selectedConfig ? selectedConfig.name : 'سروری انتخاب نشده'}
-              </Text>
-              <View style={styles.heroStats}>
-                <View style={styles.heroStat}>
-                  <Text style={styles.heroStatVal}>↓ {isConnected ? stats.downloadSpeed : '—'}</Text>
-                </View>
-                <View style={styles.heroStat}>
-                  <Text style={[styles.heroStatVal, { color: NeonTheme.colors.emerald }]}>{pingText}</Text>
-                </View>
-                <View style={styles.heroStat}>
-                  <Text style={styles.heroStatVal}>↑ {isConnected ? stats.uploadSpeed : '—'}</Text>
-                </View>
-              </View>
-              <Text style={styles.heroTimer}>{isConnected ? formatDuration(stats.durationSeconds) : 'برای اتصال، دکمه بالا را بزن'}</Text>
+          {/* ── stat tiles ── */}
+          <View style={styles.tiles}>
+            <View style={styles.tile}>
+              <Text style={styles.tileLabel}>↓ دانلود</Text>
+              <Text style={styles.tileVal}>{isConnected ? stats.downloadSpeed : '—'}</Text>
+            </View>
+            <View style={styles.tile}>
+              <Text style={styles.tileLabel}>پینگ</Text>
+              <Text style={[styles.tileVal, { color: NeonTheme.colors.emerald }]} numberOfLines={1}>{pingText}</Text>
+            </View>
+            <View style={styles.tile}>
+              <Text style={styles.tileLabel}>↑ آپلود</Text>
+              <Text style={styles.tileVal}>{isConnected ? stats.uploadSpeed : '—'}</Text>
             </View>
           </View>
-        </LinearGradient>
-        {isError && !!connectError && (
-          <View style={styles.errBox}>
-            <Text style={styles.errName} numberOfLines={2}>⚠ {connectError}</Text>
-          </View>
-        )}
+        </SafeAreaView>
+      </LinearGradient>
+
+      {isError && !!connectError && (
+        <View style={styles.errBox}>
+          <Text style={styles.errName} numberOfLines={2}>⚠ {connectError}</Text>
+        </View>
+      )}
+
+      {/* ── quick actions ── */}
+      <View style={styles.actions}>
+        <TouchableOpacity style={styles.action} onPress={() => setShowAdd(true)}>
+          <Text style={styles.actionIcon}>＋</Text>
+          <Text style={styles.actionLabel}>افزودن</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.action}
+          onPress={() => { testAllPings(); }}
+          disabled={testingPing || configs.length === 0}
+        >
+          {testingPing
+            ? <ActivityIndicator size="small" color={NeonTheme.colors.cyan} />
+            : <Text style={styles.actionIcon}>⚡</Text>}
+          <Text style={styles.actionLabel}>تست همه</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.action} onPress={() => setShowSubs(true)}>
+          <Text style={styles.actionIcon}>🔗</Text>
+          <Text style={styles.actionLabel}>اشتراک‌ها{subs.length > 0 ? ` (${subs.length})` : ''}</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* ── search + test all ── */}
-      <View style={styles.toolsRow}>
+      {/* ── search ── */}
+      <View style={styles.searchRow}>
         <TextInput
           style={styles.search}
           placeholder="جستجوی سرور…"
@@ -194,26 +228,13 @@ export const HomeScreen = () => {
           value={search}
           onChangeText={setSearch}
         />
-        <TouchableOpacity
-          style={styles.testAll}
-          onPress={() => { testAllPings(); }}
-          disabled={testingPing || configs.length === 0}
-        >
-          {testingPing
-            ? <ActivityIndicator size="small" color={NeonTheme.colors.cyan} />
-            : <Text style={styles.testAllText}>⚡ تست همه</Text>}
-        </TouchableOpacity>
       </View>
 
-      {/* ── section title ── */}
+      {/* ── section + filters ── */}
       <View style={styles.sectionRow}>
         <Text style={styles.sectionTitle}>سرورها</Text>
-        <Text style={styles.sectionCount}>
-          {configs.length} سرور{subs.length > 0 ? ` • ${subs.length} اشتراک` : ''}
-        </Text>
+        <Text style={styles.sectionCount}>{configs.length} سرور</Text>
       </View>
-
-      {/* ── filter chips ── */}
       <View style={styles.chips}>
         <FlatList
           horizontal
@@ -232,19 +253,23 @@ export const HomeScreen = () => {
         />
       </View>
 
-      {/* ── config list ── */}
+      {/* ── list ── */}
       <FlatList
         style={styles.list}
         data={filtered}
         keyExtractor={c => c.id}
-        contentContainerStyle={{ paddingBottom: 110 }}
+        contentContainerStyle={{ paddingBottom: 24 }}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>🛰️</Text>
+            <LinearGradient colors={['#8b5cf6', '#ec4899']} style={styles.emptyIconWrap}>
+              <Text style={styles.emptyIcon}>🛰️</Text>
+            </LinearGradient>
             <Text style={styles.emptyTitle}>هنوز سروری نداری</Text>
-            <Text style={styles.emptySub}>با دکمه ＋ پایین، لینک یا اشتراک اضافه کن</Text>
-            <TouchableOpacity style={styles.emptyBtn} onPress={() => setShowAdd(true)}>
-              <Text style={styles.emptyBtnText}>＋ افزودن سرور</Text>
+            <Text style={styles.emptySub}>لینک کانفیگ یا اشتراکت را اضافه کن تا شروع کنیم</Text>
+            <TouchableOpacity onPress={() => setShowAdd(true)}>
+              <LinearGradient colors={NeonTheme.gradients.brandButton} style={styles.emptyBtn}>
+                <Text style={styles.emptyBtnText}>＋ افزودن سرور</Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         }
@@ -260,72 +285,68 @@ export const HomeScreen = () => {
         )}
       />
 
-      {/* ── bottom bar ── */}
-      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 12) + 8 }]}>
-        <Text style={styles.bottomHint}>برای اتصال یک سرور را لمس کن</Text>
-        <TouchableOpacity style={styles.fab} onPress={() => setShowAdd(true)} hitSlop={6}>
-          <LinearGradient colors={NeonTheme.gradients.brandButton} style={styles.fabGrad}>
-            <Text style={styles.fabText}>＋</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-      </View>
-
       <AddModal visible={showAdd} onClose={() => setShowAdd(false)} />
       <SubsModal visible={showSubs} onClose={() => setShowSubs(false)} />
       <SettingsModal visible={showSettings} onClose={() => setShowSettings(false)} />
       <ShareModal configId={shareId} onClose={() => setShareId(null)} />
       <EditModal configId={editId} onClose={() => setEditId(null)} />
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: NeonTheme.colors.bgApp },
+  root: { flex: 1, backgroundColor: '#080b11' },
+  headerBg: { borderBottomLeftRadius: 28, borderBottomRightRadius: 28, overflow: 'hidden' },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 16, paddingBottom: 8,
+    paddingHorizontal: 18, paddingBottom: 4,
   },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  logoDot: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
-  logoText: { color: '#000', fontSize: 20, fontWeight: '900' },
-  title: { fontSize: 20, fontWeight: '900', color: NeonTheme.colors.textPrimary, letterSpacing: 0.5 },
-  statusRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
-  dot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
-  statusText: { fontSize: 12, fontWeight: '600' },
-  hbtn: { width: 48, height: 48, borderRadius: 14, backgroundColor: NeonTheme.colors.bgCard, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: NeonTheme.colors.border },
-  hbtnText: { fontSize: 20, color: NeonTheme.colors.textPrimary },
-  countBadge: { position: 'absolute', top: -5, right: -5, backgroundColor: NeonTheme.colors.purple, borderRadius: 9, minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center' },
+  logo: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
+  logoText: { color: '#fff', fontSize: 24, fontWeight: '900' },
+  appName: { fontSize: 22, fontWeight: '900', color: '#fff', letterSpacing: 0.5 },
+  appSub: { fontSize: 11, color: '#a78bfa', marginTop: 1 },
+  hbtn: { width: 48, height: 48, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' },
+  hbtnText: { fontSize: 20 },
+  countBadge: { position: 'absolute', top: -5, right: -5, backgroundColor: '#ec4899', borderRadius: 9, minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center' },
   countText: { color: '#fff', fontSize: 10, fontWeight: '800' },
 
-  heroWrap: { paddingHorizontal: 16, marginTop: 2 },
-  heroBorder: { borderRadius: 20, padding: 1.5 },
-  heroInner: { backgroundColor: '#0c1222', borderRadius: 19, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 14 },
-  powerWrap: { width: 104, height: 104, borderRadius: 52 },
-  powerRing: { flex: 1, borderRadius: 52, padding: 4 },
-  powerInner: { flex: 1, backgroundColor: '#0c1222', borderRadius: 48, justifyContent: 'center', alignItems: 'center' },
-  powerIcon: { fontSize: 30, color: NeonTheme.colors.textPrimary },
-  powerLabel: { fontSize: 12, fontWeight: '700', marginTop: 2 },
-  heroInfo: { flex: 1 },
-  heroServerLabel: { color: NeonTheme.colors.textMuted, fontSize: 11 },
-  heroServer: { color: NeonTheme.colors.textPrimary, fontSize: 15, fontWeight: '800', marginTop: 2 },
-  heroStats: { flexDirection: 'row', gap: 12, marginTop: 8 },
-  heroStat: { backgroundColor: NeonTheme.colors.bgCard, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 5, borderWidth: 1, borderColor: NeonTheme.colors.border },
-  heroStatVal: { color: NeonTheme.colors.cyan, fontSize: 12, fontWeight: '700', fontFamily: NeonTheme.typography.fontMono },
-  heroTimer: { color: NeonTheme.colors.textMuted, fontSize: 11, marginTop: 6 },
-  errBox: { backgroundColor: 'rgba(239,68,68,0.1)', borderRadius: 12, padding: 10, marginTop: 8, borderWidth: 1, borderColor: 'rgba(239,68,68,0.35)' },
+  pillRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 10 },
+  pill: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6 },
+  dot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
+  pillText: { fontSize: 13, fontWeight: '700' },
+  timer: { color: NeonTheme.colors.textMuted, fontSize: 12, fontFamily: NeonTheme.typography.fontMono },
+
+  powerZone: { alignItems: 'center', marginTop: 12 },
+  powerWrap: { width: 148, height: 148, borderRadius: 74 },
+  powerRing: { flex: 1, borderRadius: 74, padding: 5 },
+  powerInner: { flex: 1, backgroundColor: '#0f0b26', borderRadius: 70, justifyContent: 'center', alignItems: 'center' },
+  powerIcon: { fontSize: 42, color: '#fff' },
+  powerLabel: { fontSize: 14, fontWeight: '800', marginTop: 4 },
+  serverName: { color: NeonTheme.colors.textSecondary, fontSize: 13, marginTop: 10, paddingHorizontal: 30 },
+
+  tiles: { flexDirection: 'row', gap: 10, paddingHorizontal: 18, marginTop: 12, paddingBottom: 18 },
+  tile: { flex: 1, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 16, paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  tileLabel: { color: NeonTheme.colors.textMuted, fontSize: 11 },
+  tileVal: { color: NeonTheme.colors.cyan, fontSize: 14, fontWeight: '800', marginTop: 3, fontFamily: NeonTheme.typography.fontMono },
+
+  errBox: { backgroundColor: 'rgba(239,68,68,0.1)', borderRadius: 12, padding: 10, marginHorizontal: 16, marginTop: 10, borderWidth: 1, borderColor: 'rgba(239,68,68,0.35)' },
   errName: { color: NeonTheme.colors.red, fontSize: 12, textAlign: 'center' },
 
-  toolsRow: { flexDirection: 'row', paddingHorizontal: 16, marginTop: 12, gap: 10 },
+  actions: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginTop: 12 },
+  action: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: NeonTheme.colors.bgCard, borderRadius: 16, paddingVertical: 13, borderWidth: 1, borderColor: NeonTheme.colors.border },
+  actionIcon: { color: NeonTheme.colors.purple, fontSize: 17, fontWeight: '800' },
+  actionLabel: { color: NeonTheme.colors.textPrimary, fontSize: 13, fontWeight: '700' },
+
+  searchRow: { paddingHorizontal: 16, marginTop: 10 },
   search: {
-    flex: 1, backgroundColor: NeonTheme.colors.bgCard, borderRadius: 14, paddingHorizontal: 14,
+    backgroundColor: NeonTheme.colors.bgCard, borderRadius: 16, paddingHorizontal: 16,
     paddingVertical: 12, color: NeonTheme.colors.textPrimary, fontSize: 14,
     borderWidth: 1, borderColor: NeonTheme.colors.border, textAlign: 'right',
   },
-  testAll: { backgroundColor: NeonTheme.colors.bgCard, borderRadius: 14, paddingHorizontal: 16, justifyContent: 'center', borderWidth: 1, borderColor: NeonTheme.colors.border, minHeight: 48 },
-  testAllText: { color: NeonTheme.colors.cyan, fontWeight: '700', fontSize: 13 },
 
-  sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 18, marginTop: 14, marginBottom: 2 },
-  sectionTitle: { color: NeonTheme.colors.textPrimary, fontSize: 16, fontWeight: '800' },
+  sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginTop: 14, marginBottom: 2 },
+  sectionTitle: { color: '#fff', fontSize: 17, fontWeight: '800' },
   sectionCount: { color: NeonTheme.colors.textMuted, fontSize: 12 },
 
   chips: { paddingLeft: 16, marginVertical: 8 },
@@ -334,21 +355,12 @@ const styles = StyleSheet.create({
   chipText: { color: NeonTheme.colors.textSecondary, fontSize: 12, fontWeight: '600' },
   chipTextActive: { color: '#fff' },
   list: { flex: 1, paddingHorizontal: 16 },
-  empty: { alignItems: 'center', marginTop: 44, paddingHorizontal: 24 },
-  emptyIcon: { fontSize: 44 },
-  emptyTitle: { color: NeonTheme.colors.textPrimary, fontSize: 18, fontWeight: '800', marginTop: 12 },
-  emptySub: { color: NeonTheme.colors.textMuted, fontSize: 13, marginTop: 6, textAlign: 'center' },
-  emptyBtn: { backgroundColor: NeonTheme.colors.purple, borderRadius: 14, paddingHorizontal: 22, paddingVertical: 12, marginTop: 16 },
-  emptyBtnText: { color: '#fff', fontSize: 14, fontWeight: '800' },
 
-  bottomBar: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, paddingTop: 10,
-    backgroundColor: NeonTheme.colors.bgApp + 'F2', borderTopWidth: 1, borderColor: NeonTheme.colors.border,
-  },
-  bottomHint: { color: NeonTheme.colors.textMuted, fontSize: 12 },
-  fab: { width: 60, height: 60, borderRadius: 30, marginTop: -34, elevation: 6 },
-  fabGrad: { flex: 1, borderRadius: 30, alignItems: 'center', justifyContent: 'center' },
-  fabText: { color: '#fff', fontSize: 30, fontWeight: '300', marginTop: -3 },
+  empty: { alignItems: 'center', marginTop: 40, paddingHorizontal: 24 },
+  emptyIconWrap: { width: 84, height: 84, borderRadius: 42, alignItems: 'center', justifyContent: 'center' },
+  emptyIcon: { fontSize: 40 },
+  emptyTitle: { color: '#fff', fontSize: 19, fontWeight: '800', marginTop: 14 },
+  emptySub: { color: NeonTheme.colors.textMuted, fontSize: 13, marginTop: 6, textAlign: 'center' },
+  emptyBtn: { borderRadius: 16, paddingHorizontal: 28, paddingVertical: 13, marginTop: 18 },
+  emptyBtnText: { color: '#fff', fontSize: 15, fontWeight: '800' },
 });
