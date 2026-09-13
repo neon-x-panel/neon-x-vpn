@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, View, Text, Modal, TouchableOpacity, TextInput, Alert, ScrollView, Linking } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import * as Updates from 'expo-updates';
+import Constants from 'expo-constants';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as IntentLauncher from 'expo-intent-launcher';
 import * as Clipboard from 'expo-clipboard';
@@ -160,8 +161,8 @@ export const SettingsModal = ({ visible, onClose }: { visible: boolean; onClose:
     try {
       const resp = await fetch('https://api.github.com/repos/neon-x-panel/neon-x-vpn/releases/latest');
       const data = await resp.json();
-      const latest = data.tag_name; // e.g. "2.2.6"
-      const current = '2.2.5';
+      const latest = data.tag_name; // e.g. "2.2.7"
+      const current = Constants.expoConfig?.version ?? '2.2.7';
       const apk = (data.assets || []).find((a: any) => a.name?.endsWith('.apk'));
       const apkUrl = apk?.browser_download_url;
       if (latest && latest !== current) {
