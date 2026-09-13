@@ -18,13 +18,18 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.ksgamer31.neonxvpn",
-      "versionCode": 4,
+      "versionCode": 5,
       "permissions": ["REQUEST_INSTALL_PACKAGES"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "scheme": "neonx",
+    "runtimeVersion": { "policy": "appVersion" },
+    "updates": {
+      "url": "https://u.expo.dev/1b959cd8-7539-49ad-a446-3e007a711100",
+      "checkAutomatically": "NEVER"
+    },
     "plugins": [
       "./plugins/withXrayVpnFix.js",
       "expo-font"

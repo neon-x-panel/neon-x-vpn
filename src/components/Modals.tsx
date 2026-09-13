@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, Text, Modal, TouchableOpacity, TextInput, Alert, ScrollView, Linking } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
+import * as Updates from 'expo-updates';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as IntentLauncher from 'expo-intent-launcher';
 import * as Clipboard from 'expo-clipboard';
@@ -142,11 +143,20 @@ export const ShareModal = ({ configId, onClose }: { configId: string | null; onC
 export const SettingsModal = ({ visible, onClose }: { visible: boolean; onClose: () => void }) => {
   const { routingMode, setRoutingMode, dnsMode, setDnsMode, killSwitch, setKillSwitch, clearAll, language, setLanguage } = useVpn();
   const [confirmClear, setConfirmClear] = useState(false);
-  const [update, setUpdate] = useState<{ available: boolean; url?: string; version?: string; apkUrl?: string } | null>(null);
+  const [update, setUpdate] = useState<{ available: boolean; url?: string; version?: string; apkUrl?: string; ota?: boolean } | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [progress, setProgress] = useState(0);
 
   const checkUpdate = async () => {
+    // 1. OTA patch (small, JS-only changes)
+    try {
+      const ota = await Updates.checkForUpdateAsync();
+      if (ota.isAvailable) {
+        setUpdate({ available: true, version: 'پچ جدید', ota: true });
+        return;
+      }
+    } catch { /* offline or updates not configured — fall through to APK check */ }
+    // 2. Full APK (native changes)
     try {
       const resp = await fetch('https://api.github.com/repos/neon-x-panel/neon-x-vpn/releases/latest');
       const data = await resp.json();
@@ -162,6 +172,22 @@ export const SettingsModal = ({ visible, onClose }: { visible: boolean; onClose:
     } catch {
       Alert.alert('خطا', 'بررسی به‌روزرسانی ناموفق بود');
     }
+  };
+
+  const applyUpdate = async () => {
+    // OTA patch: download small JS bundle and restart
+    if (update?.ota) {
+      try {
+        setDownloading(true);
+        await Updates.fetchUpdateAsync();
+        await Updates.reloadAsync();
+      } catch (e: any) {
+        setDownloading(false);
+        Alert.alert('خطا', 'دریافت پچ ناموفق بود: ' + (e?.message || ''));
+      }
+      return;
+    }
+    await downloadAndInstall();
   };
 
   const downloadAndInstall = async () => {
@@ -218,9 +244,11 @@ export const SettingsModal = ({ visible, onClose }: { visible: boolean; onClose:
           <View style={styles.handle} />
           <Text style={styles.title}>تنظیمات</Text>
           {update?.available && (
-            <TouchableOpacity disabled={downloading} style={{ backgroundColor: '#f1c40f', padding: 12, borderRadius: 12, marginBottom: 12, alignItems: 'center', opacity: downloading ? 0.7 : 1 }} onPress={downloadAndInstall}>
+            <TouchableOpacity disabled={downloading} style={{ backgroundColor: '#f1c40f', padding: 12, borderRadius: 12, marginBottom: 12, alignItems: 'center', opacity: downloading ? 0.7 : 1 }} onPress={applyUpdate}>
               <Text style={{ color: '#000', fontWeight: 'bold' }}>
-                {downloading ? `در حال دانلود… ${Math.round(progress * 100)}٪` : `دانلود و نصب نسخه ${update.version}`}
+                {downloading
+                  ? (update?.ota ? 'در حال دریافت پچ…' : `در حال دانلود… ${Math.round(progress * 100)}٪`)
+                  : (update?.ota ? 'دریافت پچ جدید (سریع)' : `دانلود و نصب نسخه ${update.version}`)}
               </Text>
             </TouchableOpacity>
           )}

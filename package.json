@@ -13,6 +13,7 @@
     "expo-intent-launcher": "~57.0.1",
     "expo-linear-gradient": "~57.0.2",
     "expo-status-bar": "~57.0.1",
+    "expo-updates": "~57.0.22",
     "expo-xray-vpn": "^0.7.30",
     "react": "19.2.3",
     "react-dom": "19.2.3",
